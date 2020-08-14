@@ -7,7 +7,7 @@ app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
 
 const cors = require("cors");
-app.use(cors());
+app.use(cors({}));
 
 ////////////// Connect DB
 
@@ -64,6 +64,16 @@ app.get("/images/:name", (req, res) => {
 
 
 
+///////////// Admin Account
+let AdminUser , AdminPassword
+fbAdmin.database().ref().child('AdminData').on('value',data => 
+{
+  AdminUser = data.val().User
+  AdminPassword = data.val().AdminPassword
+  console.log(data.val())
+})
+
+
 ///////////////////////////
 ////////////
 //////////////////////////      SERVER
@@ -75,23 +85,11 @@ var server = http.createServer(app);
 server.listen(port, () => {
   console.log("Server listen on port : " + port);
 });
-
-
-
-///////////// Admin Account
-let AdminUser , AdminPassword
-fbAdmin.database().ref().child('AdminData').on('value',data => 
-{
-  AdminUser = data.val().User
-  AdminPassword = data.val().AdminPassword
-  console.log(data.val())
-})
-
 ////////////////////////////////
 /////////////////////////////// Socket
-
-
 const socket = require("socket.io").listen(server);
+
+
 socket.on("connection", (so) => {
 
 
