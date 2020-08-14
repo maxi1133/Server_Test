@@ -1,4 +1,13 @@
-const app = require("express")();
+///////////////////////////
+////////////
+//////////////////////////      SERVER
+
+var express = require('express'),
+    app = express(),
+    server = require('http').createServer(app),
+    io = require('socket.io').listen(server)
+
+server.listen(process.env.PORT || 3001);
 
 ////////////// middle ware
 
@@ -10,13 +19,13 @@ const cors = require("cors");
 app.use(cors({}));
 
 
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "X-Requested-With");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
-  res.header("Access-Control-Allow-Methods", "PUT, GET, POST, DELETE, OPTIONS");
-  next();
-});
+// app.use((req, res, next) => {
+//   res.header("Access-Control-Allow-Origin", "*");
+//   res.header("Access-Control-Allow-Headers", "X-Requested-With");
+//   res.header("Access-Control-Allow-Headers", "Content-Type");
+//   res.header("Access-Control-Allow-Methods", "PUT, GET, POST, DELETE, OPTIONS");
+//   next();
+// });
 
 ////////////// Connect DB
 
@@ -83,23 +92,17 @@ fbAdmin.database().ref().child('AdminData').on('value',data =>
 })
 
 
-///////////////////////////
-////////////
-//////////////////////////      SERVER
 
 
-const port = 4000;
-var http = require("http");
-var server = http.createServer(app);
-server.listen(port, () => {
-  console.log("Server listen on port : " + port);
-});
+
 ////////////////////////////////
 /////////////////////////////// Socket
-const socket = require("socket.io").listen(server);
 
+// socket.set('transports', ['websocket', 'xhr-polling', 'jsonp-polling',
+//  'htmlfile', 'flashsocket']);
+// socket.set('origins', '*:*');
 
-socket.on("connection", (so) => {
+io.on("connection", (so) => {
 
 
 
