@@ -62,7 +62,7 @@ app.get("/images/:name", (req, res) => {
   res.sendFile(path.resolve(`./images/${fileName}`));
 });
 
-
+app.get('/',(req,res)=> { res.send({a:'welcome'})})
 
 ///////////// Admin Account
 let AdminUser , AdminPassword
