@@ -2,13 +2,12 @@
 ////////////
 //////////////////////////      SERVER
 
-var express = require('express'),
-    app = express(),
-    server = require('http').createServer(app),
-    io = require('socket.io').listen(server)
+let express = require("express"),
+  app = express(),
+  server = require("http").createServer(app),
+  io = require("socket.io").listen(server);
 
 server.listen(process.env.PORT || 3001);
-
 ////////////// middle ware
 
 const bodyparser = require("body-parser");
@@ -16,16 +15,7 @@ app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
 
 const cors = require("cors");
-app.use(cors({}));
-
-
-// app.use((req, res, next) => {
-//   res.header("Access-Control-Allow-Origin", "*");
-//   res.header("Access-Control-Allow-Headers", "X-Requested-With");
-//   res.header("Access-Control-Allow-Headers", "Content-Type");
-//   res.header("Access-Control-Allow-Methods", "PUT, GET, POST, DELETE, OPTIONS");
-//   next();
-// });
+app.use(cors());
 
 ////////////// Connect DB
 
@@ -40,77 +30,70 @@ const { fbAdmin } = require("./db/firebase");
 //   });
 // });
 
+////////////////////////////////////////
+////////////////////////////////////////   Route
+////////////////////////////////////////
 
+// const fs = require("fs");
+// const multer = require("multer");
+// const path = require("path");
 
-///////////////////////////////////////////////////////////////// Route
+// let imageUploader = multer({ dest: "images/" }); // (**)
 
-const fs = require("fs");
-const multer = require("multer");
-const path = require("path");
+// app.post("/upload", imageUploader.single("hinh"), (req, res) => {
+//   try {
+//     let processedFile = req.file || {}; // MULTER xử lý và gắn đối tượng FILE vào req
+//     let orgName = processedFile.originalname || ""; // Tên gốc trong máy tính của người upload
+//     orgName = orgName.trim().replace(/ /g, "-");
+//     const fullPathInServ = processedFile.path; // Đường dẫn đầy đủ của file vừa đc upload lên server
+//     // Đổi tên của file vừa upload lên, vì multer đang đặt default ko có đuôi file
+//     const newFullPath = `${fullPathInServ}-${orgName}`;
+//     fs.renameSync(fullPathInServ, newFullPath);
+//     res.send({
+//       status: true,
+//       message: "file uploaded",
+//       fileNameInServer: newFullPath,
+//     });
+//   } catch (error) {
+//     res.send({ status: false, message: "not contain image" });
+//   }
+// });
 
-let imageUploader = multer({ dest: "images/" }); // (**)
+// app.get("/images/:name", (req, res) => {
+//   let fileName = req.params.name;
+//   if (!fileName) {
+//     return res.send({
+//       status: false,
+//       message: "no filename specified",
+//     });
+//   }
+//   res.sendFile(path.resolve(`./images/${fileName}`));
+// });
 
-app.post("/upload", imageUploader.single("hinh"), (req, res) => {
-  try {
-    let processedFile = req.file || {}; // MULTER xử lý và gắn đối tượng FILE vào req
-    let orgName = processedFile.originalname || ""; // Tên gốc trong máy tính của người upload
-    orgName = orgName.trim().replace(/ /g, "-");
-    const fullPathInServ = processedFile.path; // Đường dẫn đầy đủ của file vừa đc upload lên server
-    // Đổi tên của file vừa upload lên, vì multer đang đặt default ko có đuôi file
-    const newFullPath = `${fullPathInServ}-${orgName}`;
-    fs.renameSync(fullPathInServ, newFullPath);
-    res.send({
-      status: true,
-      message: "file uploaded",
-      fileNameInServer: newFullPath,
-    });
-  } catch (error) {
-    res.send({ status: false, message: "not contain image" });
-  }
+app.get("/", (req, res) => {
+  res.send({ a: "welcome" });
 });
-
-app.get("/images/:name", (req, res) => {
-  let fileName = req.params.name;
-  if (!fileName) {
-    return res.send({
-      status: false,
-      message: "no filename specified",
-    });
-  }
-  res.sendFile(path.resolve(`./images/${fileName}`));
-});
-
-app.get('/',(req,res)=> { res.send({a:'welcome'})})
 
 ///////////// Admin Account
-let AdminUser , AdminPassword
-fbAdmin.database().ref().child('AdminData').on('value',data => 
-{
-  AdminUser = data.val().User
-  AdminPassword = data.val().AdminPassword
-  console.log(data.val())
-})
 
-
-
-
+let AdminUser, AdminPassword;
+fbAdmin
+  .database()
+  .ref()
+  .child("AdminData")
+  .on("value", (data) => {
+    AdminUser = data.val().User;
+    AdminPassword = data.val().AdminPassword;
+    console.log(data.val());
+  });
 
 ////////////////////////////////
 /////////////////////////////// Socket
-
-// socket.set('transports', ['websocket', 'xhr-polling', 'jsonp-polling',
-//  'htmlfile', 'flashsocket']);
-// socket.set('origins', '*:*');
-
 io.on("connection", (so) => {
-
-
-
   ////////////////////////////////////////////
   ////////////////////////////////////////////ADMIN
   //////////////////////////////////////////// login
   so.on("Admin_Login", (data) => {
-    
     let { taikhoan, matkhau } = data;
     if (taikhoan === AdminUser && matkhau === AdminPassword) {
       so.join("AdminRoom");
@@ -126,48 +109,50 @@ io.on("connection", (so) => {
     }
   });
 
-
   ///////////////////////////////////////// up brand      BRANDDDDDDD
 
+  so.on("ThemBrand", async (data) => {
+    let array = [];
+    await fbAdmin
+      .database()
+      .ref()
+      .child("Brands")
+      .push({ Brand: data.thuonghieu });
 
-  so.on('ThemBrand',async data => {
-
-    let array = []
-    await fbAdmin.database().ref().child('Brands').push({ Brand : data.thuonghieu})
-    
-    fbAdmin.database().ref().child('Brands').once('value',data => {
-      data.forEach(val => 
-      {
-        array.push( { id: val.key, brand : val.val() } )
-        if(data.numChildren() === array.length) { so.emit('getAllBrand_res',array) }
-      })
-    })
-
-  })
-
+    fbAdmin
+      .database()
+      .ref()
+      .child("Brands")
+      .once("value", (data) => {
+        data.forEach((val) => {
+          array.push({ id: val.key, brand: val.val() });
+          if (data.numChildren() === array.length) {
+            so.emit("getAllBrand_res", array);
+          }
+        });
+      });
+  });
 
   ///////////////////get brand
 
+  so.on("getAllBrand", (data) => {
+    let array = [];
+    fbAdmin.database().ref().child("Brands").once("value", (data) => {
 
-  so.on('getAllBrand',data => {
+      data.forEach((val) => {
+        array.push({ id: val.key, brand: val.val() });
+        if (data.numChildren() === array.length) {
+          so.emit("getAllBrand_res", array);
+        }
+      });
 
-    let array = []
-    fbAdmin.database().ref().child('Brands').once('value',data => {
-      data.forEach(val => 
-      {
-        array.push({ id: val.key, brand: val.val() })
-        if(data.numChildren() === array.length) { so.emit('getAllBrand_res',array) }
-      })
-    })
-
-  })
-
+    });
+  });
 
   /////////////////////// ////////////////// up product
 
-
   so.on("upDataProDuctToFirebase", (data) => {
-    let {imageAdress, tensanpham, thuonghieu } = data
+    let { imageAdress, tensanpham, thuonghieu } = data;
     // fbAdmin
     //   .database()
     //   .ref()
@@ -177,57 +162,14 @@ io.on("connection", (so) => {
     //     so.emit("upDataProDuctToFirebase_res", e);
     //   });
 
-    console.log(data)
+    console.log(data);
   });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   ////////////////////////////////////////////
   //////////////////////////////////////////// CLIENT
   ////////////////////////////////////////////
-  so.on("ClientConnected", (data) => 
-  {
+  so.on("ClientConnected", (data) => {
     // console.log(so.id);
     so.to("AdminRoom").emit("new_Client_connected", { id: so.id });
   });
-
-
-
-
 });
